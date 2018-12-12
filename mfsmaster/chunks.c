@@ -962,7 +962,7 @@ void chunk_delopchunk(uint16_t csid,uint64_t chunkid) {
 	}
 }
 
-static inline uint16_t chunk_creation_servers(uint16_t csids[MAXCSCOUNT],uint8_t sclassid,uint8_t *olflag) {
+static inline uint16_t chunk_creation_servers(uint16_t csids[MAXCSCOUNT],uint8_t sclassid,uint32_t peerip,uint8_t *olflag) {
 	int32_t *matching;
 	uint32_t **labelmasks;
 	uint8_t labelcnt;
@@ -973,7 +973,7 @@ static inline uint16_t chunk_creation_servers(uint16_t csids[MAXCSCOUNT],uint8_t
 	uint32_t i,j;
 	int32_t x;
 
-	servcount = matocsserv_getservers_wrandom(csids,&overloaded);
+	servcount = matocsserv_getservers_wrandom(csids,peerip,&overloaded);
 	if (servcount==0) {
 		*olflag = (overloaded>0)?1:0;
 		return 0;
@@ -1480,7 +1480,7 @@ int chunk_read_check(uint32_t ts,uint64_t chunkid) {
 	return MFS_STATUS_OK;
 }
 
-int chunk_univ_multi_modify(uint32_t ts,uint8_t mr,uint8_t continueop,uint64_t *nchunkid,uint64_t ochunkid,uint8_t sclassid,uint8_t *opflag) {
+int chunk_univ_multi_modify(uint32_t ts,uint8_t mr,uint8_t continueop,uint64_t *nchunkid,uint64_t ochunkid,uint8_t sclassid,uint32_t peerip,uint8_t *opflag) {
 	uint16_t csids[MAXCSCOUNT];
 	static void **chosen = NULL;
 	static uint32_t chosenleng = 0;
@@ -1506,7 +1506,7 @@ int chunk_univ_multi_modify(uint32_t ts,uint8_t mr,uint8_t continueop,uint64_t *
 
 	if (ochunkid==0) {	// new chunk
 		if (mr==0) {
-			servcount = chunk_creation_servers(csids,sclassid,&overloaded);
+			servcount = chunk_creation_servers(csids,sclassid,peerip,&overloaded);
 			if (servcount==0) {
 				if (overloaded) {
 					return MFS_ERROR_EAGAIN;
@@ -1709,12 +1709,12 @@ int chunk_univ_multi_modify(uint32_t ts,uint8_t mr,uint8_t continueop,uint64_t *
 	return MFS_STATUS_OK;
 }
 
-int chunk_multi_modify(uint8_t continueop,uint64_t *nchunkid,uint64_t ochunkid,uint8_t sclassid,uint8_t *opflag) {
-	return chunk_univ_multi_modify(main_time(),0,continueop,nchunkid,ochunkid,sclassid,opflag);
+int chunk_multi_modify(uint8_t continueop,uint64_t *nchunkid,uint64_t ochunkid,uint8_t sclassid,uint32_t peerip,uint8_t *opflag) {
+	return chunk_univ_multi_modify(main_time(),0,continueop,nchunkid,ochunkid,sclassid,peerip,opflag);
 }
 
 int chunk_mr_multi_modify(uint32_t ts,uint64_t *nchunkid,uint64_t ochunkid,uint8_t sclassid,uint8_t opflag) {
-	return chunk_univ_multi_modify(ts,1,0,nchunkid,ochunkid,sclassid,&opflag);
+	return chunk_univ_multi_modify(ts,1,0,nchunkid,ochunkid,sclassid,0,&opflag);
 }
 
 int chunk_univ_multi_truncate(uint32_t ts,uint8_t mr,uint64_t *nchunkid,uint64_t ochunkid,uint32_t length,uint8_t sclassid) {

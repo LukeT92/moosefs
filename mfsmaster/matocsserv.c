@@ -59,6 +59,7 @@
 #include "storageclass.h"
 #include "md5.h"
 #include "mfsalloc.h"
+#include "topology.h"
 
 #define MaxPacketSize CSTOMA_MAXPACKETSIZE
 
@@ -810,7 +811,16 @@ void matocsserv_getservers_test(uint16_t *stdcscnt,uint16_t stdcsids[MAXCSCOUNT]
 	}
 }
 
-uint16_t matocsserv_getservers_wrandom(uint16_t csids[MAXCSCOUNT],uint16_t *overloaded) {
+static uint8_t matocsserv_is_peer_close(matocsserventry* eptr, uint32_t peerip) {
+	const uint8_t maxdistance = 1;
+	if (peerip > 0) {
+		return topology_distance(eptr->servip, peerip) <= maxdistance;
+	} else {
+		return 1;
+	}
+}
+
+uint16_t matocsserv_getservers_wrandom(uint16_t csids[MAXCSCOUNT],uint32_t peerip,uint16_t *overloaded) {
 	matocsserventry* servtab[MAXCSCOUNT];
 	matocsserventry *eptr;
 	uint32_t i;
@@ -841,7 +851,7 @@ uint16_t matocsserv_getservers_wrandom(uint16_t csids[MAXCSCOUNT],uint16_t *over
 	*overloaded = 0;
 
 	for (eptr = matocsservhead ; eptr && allcnt<MAXCSCOUNT ; eptr=eptr->next) {
-		if (eptr->mode!=KILL && eptr->totalspace>0 && eptr->usedspace<=eptr->totalspace && eptr->csptr!=NULL) {
+		if (eptr->mode!=KILL && eptr->totalspace>0 && eptr->usedspace<=eptr->totalspace && eptr->csptr!=NULL && matocsserv_is_peer_close(eptr,peerip)) {
 			if ((eptr->totalspace - eptr->usedspace)>(MFSCHUNKSIZE*(1U+eptr->writecounter*10U)) && eptr->hlstatus!=HLSTATUS_OVERLOADED) {
 				totalcnt++;
 				if ((eptr->privflag & 2) == 0) {
@@ -863,7 +873,7 @@ uint16_t matocsserv_getservers_wrandom(uint16_t csids[MAXCSCOUNT],uint16_t *over
 
 	if ((gracecnt*5) > (gracecnt+allcnt)) { // there are more than 20% CS in 'grace' or 'rebalance' state - add all of them to the list
 		for (eptr = matocsservhead ; eptr && allcnt<MAXCSCOUNT ; eptr=eptr->next) {
-			if (eptr->mode!=KILL && eptr->totalspace>0 && eptr->usedspace<=eptr->totalspace && (eptr->totalspace - eptr->usedspace)>(MFSCHUNKSIZE*(1U+eptr->writecounter*10U)) && eptr->csptr!=NULL && eptr->hlstatus!=HLSTATUS_OVERLOADED) {
+			if (eptr->mode!=KILL && eptr->totalspace>0 && eptr->usedspace<=eptr->totalspace && (eptr->totalspace - eptr->usedspace)>(MFSCHUNKSIZE*(1U+eptr->writecounter*10U)) && eptr->csptr!=NULL && eptr->hlstatus!=HLSTATUS_OVERLOADED && matocsserv_is_peer_close(eptr,peerip)) {
 				if ((eptr->privflag & 2)==0 && ((eptr->hlstatus!=HLSTATUS_DEFAULT && eptr->hlstatus!=HLSTATUS_OK) || csdb_server_is_being_maintained(eptr->csptr))) {
 //				if (eptr->cancreatechunks && csdb_server_is_overloaded(eptr->csptr,now)) {
 					servtab[allcnt] = eptr;

@@ -34,7 +34,7 @@ uint16_t matocsserv_almostfull_servers(void);
 // uint16_t matocsserv_getservers_ordered(uint16_t csids[MAXCSCOUNT],double maxusagediff,uint32_t *min,uint32_t *max);
 void matocsserv_getservers_test(uint16_t *stdcscnt,uint16_t stdcsids[MAXCSCOUNT],uint16_t *olcscnt,uint16_t olcsids[MAXCSCOUNT],uint16_t *allcscnt,uint16_t allcsids[MAXCSCOUNT]);
 uint16_t matocsserv_getservers_ordered(uint16_t csids[MAXCSCOUNT]);
-uint16_t matocsserv_getservers_wrandom(uint16_t csids[MAXCSCOUNT],uint16_t *overloaded);
+uint16_t matocsserv_getservers_wrandom(uint16_t csids[MAXCSCOUNT],uint32_t peerip,uint16_t *overloaded);
 void matocsserv_useservers_wrandom(void* servers[MAXCSCOUNT],uint16_t cnt);
 uint16_t matocsserv_getservers_lessrepl(uint16_t csids[MAXCSCOUNT],double replimit,uint8_t highpriority,uint8_t *allservflag);
 
